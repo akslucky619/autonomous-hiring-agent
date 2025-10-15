@@ -49,7 +49,7 @@
         "url": "http://text-extract:8001/extract",
         "method": "POST",
         "sendBinaryData": true,
-        "binaryPropertyName": "data",
+        "binaryPropertyName": "file",
         "options": {
           "response": {
             "response": {
