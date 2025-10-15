@@ -47,6 +47,7 @@
     {
       "parameters": {
         "url": "http://text-extract:8001/extract",
+        "method": "POST",
         "sendBinaryData": true,
         "binaryPropertyName": "data",
         "options": {
@@ -77,6 +78,7 @@
     {
       "parameters": {
         "url": "http://embeddings:8002/embed",
+        "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"text\": {{ $json.text }}\n}",
