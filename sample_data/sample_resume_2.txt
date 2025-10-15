@@ -1,0 +1,46 @@
+Sarah Johnson
+Full Stack Developer
+sarah.johnson@email.com
+Remote
+(555) 987-6543
+
+SUMMARY
+Full-stack developer with 4 years of experience in modern web technologies. 
+Specialized in React, Node.js, and cloud deployment. Passionate about creating 
+user-friendly applications and optimizing performance.
+
+TECHNICAL EXPERTISE
+- Frontend: React, JavaScript, TypeScript, HTML5, CSS3
+- Backend: Node.js, Express, Python, FastAPI
+- Databases: PostgreSQL, MongoDB, Redis
+- Cloud: AWS, Docker, Heroku
+- Tools: Git, Webpack, Jest, Linux
+
+WORK EXPERIENCE
+
+Full Stack Developer | Digital Agency | 2021 - Present
+- Developed responsive web applications using React and Node.js
+- Built REST APIs with Express and integrated with PostgreSQL databases
+- Implemented user authentication and real-time features using WebSockets
+- Collaborated with design team to create pixel-perfect UIs
+
+Frontend Developer | E-commerce Co. | 2019 - 2021
+- Created interactive user interfaces using React and TypeScript
+- Optimized application performance reducing load times by 50%
+- Implemented responsive design for mobile and desktop platforms
+- Worked with Redux for state management
+
+Junior Developer | TechStart | 2018 - 2019
+- Developed web applications using JavaScript and Python
+- Worked with MySQL databases and implemented CRUD operations
+- Participated in code reviews and testing procedures
+- Learned agile development methodologies
+
+EDUCATION
+Bachelor of Science in Software Engineering
+Stanford University | 2014 - 2018
+
+PROJECTS
+- E-commerce Platform: Built with React, Node.js, and PostgreSQL
+- Task Management App: Developed using FastAPI and Redis
+- Weather Dashboard: Created with JavaScript and external APIs

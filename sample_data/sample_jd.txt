@@ -1,0 +1,47 @@
+Senior Python Developer - Remote
+
+Company: TechStart Inc.
+Location: Remote (US-based)
+Type: Full-time
+Experience: 3+ years
+
+Job Description:
+
+We are seeking a talented Senior Python Developer to join our growing engineering team. 
+You will be responsible for building scalable backend services and APIs that power our 
+next-generation platform.
+
+Key Responsibilities:
+- Design and develop RESTful APIs using FastAPI and Django
+- Build and maintain PostgreSQL databases with optimized queries
+- Implement containerized applications using Docker
+- Work with cloud infrastructure on AWS
+- Collaborate with frontend teams on React applications
+- Write comprehensive tests and maintain code quality
+- Mentor junior developers and conduct code reviews
+
+Required Skills:
+- 3+ years of Python development experience
+- Strong experience with FastAPI or Django frameworks
+- Proficiency in PostgreSQL and database optimization
+- Experience with Docker and containerization
+- Knowledge of AWS cloud services
+- Understanding of REST API design principles
+- Experience with Git version control
+
+Preferred Skills:
+- Experience with Redis for caching
+- Knowledge of GraphQL APIs
+- Background in machine learning or data science
+- Experience with Kubernetes orchestration
+- Familiarity with CI/CD pipelines
+
+What We Offer:
+- Competitive salary ($120k - $160k)
+- Fully remote work environment
+- Health, dental, and vision insurance
+- 401(k) with company matching
+- Professional development opportunities
+- Flexible PTO policy
+
+Join our team and help us build the future of technology!

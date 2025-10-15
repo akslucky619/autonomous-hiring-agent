@@ -1,0 +1,233 @@
+{
+  "name": "Resume Processing Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-resume",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-upload",
+      "name": "Resume Upload Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "resume-upload-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.body.filename }}",
+              "rightValue": ".pdf",
+              "operator": {
+                "type": "string",
+                "operation": "endsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-file-type",
+      "name": "Check File Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://text-extract:8001/extract",
+        "sendBinaryData": true,
+        "binaryPropertyName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          }
+        }
+      },
+      "id": "extract-text",
+      "name": "Extract Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize skills and extract additional info\nconst skillMap = {\n  \"python\": [\"python\", \"py\"],\n  \"javascript\": [\"javascript\", \"js\", \"ecmascript\"],\n  \"react\": [\"react\", \"reactjs\", \"react.js\"],\n  \"node\": [\"node\", \"nodejs\", \"node.js\"],\n  \"aws\": [\"aws\", \"amazon web services\"],\n  \"docker\": [\"docker\", \"dockerfile\"],\n  \"postgresql\": [\"postgresql\", \"postgres\", \"pg\"],\n  \"fastapi\": [\"fastapi\", \"fast api\"],\n  \"django\": [\"django\"],\n  \"flask\": [\"flask\"]\n};\n\nconst text = $input.first().json.text || '';\nconst skills = $input.first().json.skills || [];\n\n// Normalize skills\nconst normalizedSkills = [];\nconst textLower = text.toLowerCase();\n\nfor (const [skill, variations] of Object.entries(skillMap)) {\n  for (const variation of variations) {\n    if (textLower.includes(variation)) {\n      normalizedSkills.push(skill);\n      break;\n    }\n  }\n}\n\n// Extract experience years\nconst expPatterns = [\n  /(\\d+)\\+?\\s*years?\\s*(?:of\\s*)?experience/gi,\n  /(\\d+)\\+?\\s*years?\\s*in\\s*\\w+/gi,\n  /experience:\\s*(\\d+)\\+?/gi\n];\n\nlet experienceYears = 0;\nfor (const pattern of expPatterns) {\n  const matches = text.match(pattern);\n  if (matches && matches.length > 0) {\n    experienceYears = parseInt(matches[0].match(/\\d+/)[0]);\n    break;\n  }\n}\n\n// Extract email\nconst emailPattern = /\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b/;\nconst email = text.match(emailPattern) ? text.match(emailPattern)[0] : '';\n\n// Extract location\nconst locationPatterns = [\n  /([A-Z][a-z]+,\\s*[A-Z]{2})/,\n  /([A-Z][a-z]+,\\s*[A-Z][a-z]+)/\n];\n\nlet location = '';\nfor (const pattern of locationPatterns) {\n  const match = text.match(pattern);\n  if (match) {\n    location = match[1];\n    break;\n  }\n}\n\nreturn {\n  json: {\n    ...$input.first().json,\n    normalized_skills: normalizedSkills,\n    experience_years: experienceYears,\n    extracted_email: email,\n    extracted_location: location,\n    processing_timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "normalize-data",
+      "name": "Normalize Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://embeddings:8002/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": {{ $json.text }}\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          }
+        }
+      },
+      "id": "generate-embedding",
+      "name": "Generate Embedding",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "candidates",
+        "columns": "id, name, email, location, work_authorization, total_years_experience, skills, raw_text, embedding, structured_data, created_at",
+        "values": "={{ $json.extracted_name || $json.name || 'Unknown' }}, {{ $json.extracted_email || $json.email || '' }}, {{ $json.extracted_location || $json.location || '' }}, 'Unknown', {{ $json.experience_years || 0 }}, {{ JSON.stringify($json.normalized_skills || []) }}, {{ JSON.stringify($json.text || '') }}, {{ JSON.stringify($json.embedding || []) }}, {{ JSON.stringify($json) }}, NOW()",
+        "options": {}
+      },
+      "id": "save-candidate",
+      "name": "Save Candidate",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Resume processed successfully\",\n  \"candidate_id\": \"{{ $json.id }}\",\n  \"extracted_data\": {\n    \"name\": \"{{ $json.name }}\",\n    \"email\": \"{{ $json.email }}\",\n    \"location\": \"{{ $json.location }}\",\n    \"skills\": {{ JSON.stringify($json.skills) }},\n    \"experience_years\": {{ $json.total_years_experience }}\n  }\n}"
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"error\",\n  \"message\": \"Only PDF files are supported\"\n}",
+        "responseCode": 400
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 500]
+    }
+  ],
+  "connections": {
+    "Resume Upload Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check File Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check File Type": {
+      "main": [
+        [
+          {
+            "node": "Extract Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [
+          {
+            "node": "Normalize Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Embedding": {
+      "main": [
+        [
+          {
+            "node": "Save Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Candidate": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "resume-processing",
+      "name": "Resume Processing"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

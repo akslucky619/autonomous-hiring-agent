@@ -1,0 +1,45 @@
+John Smith
+Senior Python Developer
+john.smith@email.com
+San Francisco, CA
+(555) 123-4567
+
+PROFESSIONAL SUMMARY
+Experienced Python developer with 5+ years of experience building scalable web applications and APIs. 
+Expertise in FastAPI, Django, PostgreSQL, and cloud technologies. Strong background in software architecture 
+and team leadership.
+
+TECHNICAL SKILLS
+- Programming Languages: Python, JavaScript, SQL
+- Frameworks: FastAPI, Django, Flask, React
+- Databases: PostgreSQL, Redis, MongoDB
+- Cloud Platforms: AWS, Docker, Kubernetes
+- Tools: Git, Linux, CI/CD, REST APIs
+
+PROFESSIONAL EXPERIENCE
+
+Senior Python Developer | TechCorp Inc. | 2022 - Present
+- Led development of microservices architecture using FastAPI and PostgreSQL
+- Implemented automated testing and CI/CD pipelines reducing deployment time by 40%
+- Mentored junior developers and conducted code reviews
+- Built REST APIs handling 10M+ requests daily
+
+Python Developer | StartupXYZ | 2020 - 2022
+- Developed web applications using Django and PostgreSQL
+- Integrated third-party APIs and payment systems
+- Optimized database queries improving performance by 60%
+- Collaborated with frontend team using React and JavaScript
+
+Software Engineer | WebSolutions | 2018 - 2020
+- Built backend services using Python and Flask
+- Worked with MySQL databases and Redis caching
+- Implemented user authentication and authorization systems
+- Participated in agile development processes
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of California, Berkeley | 2014 - 2018
+
+CERTIFICATIONS
+- AWS Certified Solutions Architect
+- Python Institute PCAP Certification

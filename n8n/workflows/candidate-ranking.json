@@ -1,0 +1,111 @@
+{
+  "name": "Candidate Ranking Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rank-candidates",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-rank",
+      "name": "Rank Candidates Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "rank-candidates-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT jd.*, c.*, 1 - (c.embedding <=> jd.embedding) as similarity_score\nFROM job_descriptions jd\nCROSS JOIN candidates c\nWHERE jd.id = $1 AND c.embedding IS NOT NULL\nORDER BY c.embedding <=> jd.embedding\nLIMIT 200",
+        "options": {
+          "queryParams": "={{ $json.body.jd_id }}"
+        }
+      },
+      "id": "vector-search",
+      "name": "Vector Search",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Apply filters and calculate scores\nconst jdId = $input.first().json.body?.jd_id;\nconst filters = $input.first().json.body?.filters || {};\nconst limit = $input.first().json.body?.limit || 20;\n\nconst candidates = $input.all().map(item => item.json);\n\n// Get job description from first candidate (they all have same JD data)\nconst jd = candidates[0] || {};\nconst jdSkills = jd.required_skills || [];\nconst jdOptionalSkills = jd.optional_skills || [];\nconst jdMinExp = jd.min_years_experience || 1;\n\n// Filter and score candidates\nconst scoredCandidates = [];\n\nfor (const candidate of candidates) {\n  // Apply hard filters\n  if (filters.location && candidate.location && \n      !candidate.location.toLowerCase().includes(filters.location.toLowerCase())) {\n    continue;\n  }\n  \n  if (filters.min_experience && candidate.total_years_experience < filters.min_experience) {\n    continue;\n  }\n  \n  if (filters.work_auth && candidate.work_authorization && \n      candidate.work_authorization.toLowerCase() !== filters.work_auth.toLowerCase()) {\n    continue;\n  }\n  \n  // Calculate scores\n  const candidateSkills = candidate.skills || [];\n  const allJdSkills = [...jdSkills, ...jdOptionalSkills];\n  \n  // Skill overlap score\n  const matchedSkills = candidateSkills.filter(skill => allJdSkills.includes(skill));\n  const skillOverlapScore = allJdSkills.length > 0 ? matchedSkills.length / allJdSkills.length : 0;\n  \n  // Experience score\n  const experienceScore = jdMinExp > 0 ? Math.min(candidate.total_years_experience / jdMinExp, 1.0) : 1.0;\n  \n  // Recency score (candidates uploaded more recently get higher score)\n  const createdDate = new Date(candidate.created_at);\n  const daysSinceUpload = (new Date() - createdDate) / (1000 * 60 * 60 * 24);\n  const recencyScore = Math.max(0, 1 - (daysSinceUpload / 30)); // Decay over 30 days\n  \n  // Final weighted score\n  const finalScore = (\n    0.40 * (candidate.similarity_score || 0) +\n    0.30 * skillOverlapScore +\n    0.20 * experienceScore +\n    0.10 * recencyScore\n  );\n  \n  // Only include candidates above minimum threshold\n  if (finalScore > 0.2) {\n    scoredCandidates.push({\n      candidate_id: candidate.id,\n      name: candidate.name,\n      email: candidate.email,\n      location: candidate.location,\n      skills: candidateSkills,\n      total_years_experience: candidate.total_years_experience,\n      similarity_score: candidate.similarity_score || 0,\n      skill_overlap_score: skillOverlapScore,\n      experience_score: experienceScore,\n      recency_score: recencyScore,\n      final_score: finalScore,\n      explanation: {\n        matched_skills: matchedSkills,\n        missing_skills: allJdSkills.filter(skill => !candidateSkills.includes(skill)),\n        experience_ratio: candidate.total_years_experience / jdMinExp,\n        similarity_breakdown: {\n          semantic_similarity: candidate.similarity_score || 0,\n          skill_overlap: skillOverlapScore,\n          experience_match: experienceScore,\n          recency_bonus: recencyScore\n        }\n      }\n    });\n  }\n}\n\n// Sort by final score and return top candidates\nconst sortedCandidates = scoredCandidates.sort((a, b) => b.final_score - a.final_score);\nconst topCandidates = sortedCandidates.slice(0, limit);\n\nreturn {\n  json: {\n    job_description: {\n      id: jd.id,\n      title: jd.title,\n      location: jd.location,\n      required_skills: jdSkills,\n      optional_skills: jdOptionalSkills,\n      min_years_experience: jdMinExp\n    },\n    results: topCandidates,\n    total_candidates: scoredCandidates.length,\n    filters_applied: filters,\n    ranking_timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "score-candidates",
+      "name": "Score Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "ranking-response",
+      "name": "Ranking Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Rank Candidates Webhook": {
+      "main": [
+        [
+          {
+            "node": "Vector Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Search": {
+      "main": [
+        [
+          {
+            "node": "Score Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Candidates": {
+      "main": [
+        [
+          {
+            "node": "Ranking Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "candidate-ranking",
+      "name": "Candidate Ranking"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

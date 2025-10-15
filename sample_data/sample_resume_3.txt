@@ -1,0 +1,51 @@
+Michael Chen
+DevOps Engineer
+michael.chen@email.com
+Austin, TX
+(555) 456-7890
+
+PROFESSIONAL PROFILE
+DevOps engineer with 6+ years of experience in cloud infrastructure, automation, 
+and CI/CD pipelines. Expert in AWS, Docker, Kubernetes, and infrastructure as code. 
+Strong background in Python scripting and system administration.
+
+TECHNICAL SKILLS
+- Cloud Platforms: AWS, Azure, Google Cloud
+- Containerization: Docker, Kubernetes, Docker Swarm
+- Infrastructure as Code: Terraform, CloudFormation
+- CI/CD: Jenkins, GitLab CI, GitHub Actions
+- Monitoring: Prometheus, Grafana, ELK Stack
+- Languages: Python, Bash, YAML, JSON
+- Databases: PostgreSQL, MySQL, Redis
+
+PROFESSIONAL EXPERIENCE
+
+Senior DevOps Engineer | CloudTech Solutions | 2021 - Present
+- Designed and implemented AWS infrastructure using Terraform
+- Built CI/CD pipelines reducing deployment time by 70%
+- Managed Kubernetes clusters for container orchestration
+- Implemented monitoring and alerting systems using Prometheus and Grafana
+
+DevOps Engineer | Finance Corp | 2019 - 2021
+- Automated infrastructure provisioning using CloudFormation
+- Deployed and maintained Docker containers in production
+- Implemented database backup and disaster recovery procedures
+- Collaborated with development teams on deployment strategies
+
+Systems Administrator | DataCenter Inc | 2017 - 2019
+- Managed Linux servers and network infrastructure
+- Automated system administration tasks using Python and Bash
+- Implemented security policies and access controls
+- Troubleshot system performance and reliability issues
+
+EDUCATION
+Master of Science in Computer Science
+University of Texas at Austin | 2015 - 2017
+
+Bachelor of Science in Information Technology
+Texas A&M University | 2011 - 2015
+
+CERTIFICATIONS
+- AWS Certified DevOps Engineer - Professional
+- Kubernetes Certified Administrator (CKA)
+- Terraform Associate Certification

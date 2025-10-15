@@ -1,0 +1,355 @@
+{
+  "name": "AI Agent - Autonomous Hiring (Fixed)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-goal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-create-goal",
+      "name": "Create Goal Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "create-goal-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "agent_goals",
+        "columns": "id, title, description, target_positions, deadline, priority, status, created_at",
+        "values": "=gen_random_uuid(), {{ $json.body.title }}, {{ $json.body.description }}, {{ $json.body.target_positions || 1 }}, {{ $json.body.deadline || null }}, {{ $json.body.priority || 'medium' }}, 'active', NOW()",
+        "options": {
+          "returnFields": "*"
+        }
+      },
+      "id": "save-goal",
+      "name": "Save Goal",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Analyze goal requirements and create search strategy\nconst goal = $input.first().json;\nconst description = goal.description || '';\nconst title = goal.title || '';\n\n// Extract keywords from goal description\nconst techKeywords = ['python', 'javascript', 'react', 'node', 'aws', 'docker', 'kubernetes', 'postgresql', 'mongodb', 'fastapi', 'django', 'flask'];\nconst extractedKeywords = [];\nconst descriptionLower = description.toLowerCase();\n\ntechKeywords.forEach(keyword => {\n  if (descriptionLower.includes(keyword)) {\n    extractedKeywords.push(keyword);\n  }\n});\n\n// Extract location preferences\nconst locations = [];\nif (descriptionLower.includes('remote')) locations.push('Remote');\nif (descriptionLower.includes('san francisco') || descriptionLower.includes('sf')) locations.push('San Francisco');\nif (descriptionLower.includes('new york') || descriptionLower.includes('nyc')) locations.push('New York');\nif (descriptionLower.includes('austin')) locations.push('Austin');\n\n// Infer experience level\nlet experienceLevel = 'mid';\nif (descriptionLower.includes('senior') || descriptionLower.includes('lead')) experienceLevel = 'senior';\nelse if (descriptionLower.includes('junior') || descriptionLower.includes('entry')) experienceLevel = 'junior';\n\n// Check if we have existing job descriptions that match\nconst searchStrategy = {\n  goal_id: goal.id,\n  title: title,\n  description: description,\n  extracted_keywords: extractedKeywords,\n  location_preferences: locations,\n  experience_level: experienceLevel,\n  strategy_created: new Date().toISOString()\n};\n\nreturn { json: { ...goal, search_strategy: searchStrategy } };"
+      },
+      "id": "analyze-requirements",
+      "name": "Analyze Requirements",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT jd.* FROM job_descriptions jd WHERE jd.title ILIKE $1 OR jd.raw_text ILIKE $1 ORDER BY jd.created_at DESC LIMIT 1",
+        "options": {
+          "queryParams": "=%{{ $json.search_strategy.title }}%"
+        }
+      },
+      "id": "find-matching-jd",
+      "name": "Find Matching JD",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [900, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-jd-found",
+      "name": "Check JD Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.*, 1 - (c.embedding <=> jd.embedding) as similarity_score FROM candidates c CROSS JOIN job_descriptions jd WHERE jd.id = $1 AND c.embedding IS NOT NULL ORDER BY c.embedding <=> jd.embedding LIMIT 50",
+        "options": {
+          "queryParams": "={{ $('Find Matching JD').first().json.id }}"
+        }
+      },
+      "id": "search-candidates-jd",
+      "name": "Search Candidates (JD)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 200],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM candidates WHERE embedding IS NOT NULL ORDER BY created_at DESC LIMIT 30",
+        "options": {}
+      },
+      "id": "search-candidates-keywords",
+      "name": "Search Candidates (Keywords)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 400],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Rank candidates autonomously\nconst goal = $('Analyze Requirements').first().json;\nconst candidates = $input.all().map(item => item.json);\nconst strategy = goal.search_strategy;\n\nif (candidates.length === 0) {\n  return {\n    json: {\n      goal_id: goal.id,\n      candidates_found: 0,\n      top_candidates: [],\n      ranking_timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Calculate scores for each candidate\nconst scoredCandidates = [];\n\nfor (const candidate of candidates) {\n  const candidateSkills = candidate.skills || [];\n  \n  // Skill matching score (based on extracted keywords)\n  const skillMatches = strategy.extracted_keywords.filter(keyword => \n    candidateSkills.some(skill => skill.toLowerCase().includes(keyword.toLowerCase()))\n  );\n  const skillScore = strategy.extracted_keywords.length > 0 ? \n    skillMatches.length / strategy.extracted_keywords.length : 0.5;\n  \n  // Experience level matching\n  const candidateExp = candidate.total_years_experience || 0;\n  let experienceScore = 0.5;\n  if (strategy.experience_level === 'senior' && candidateExp >= 5) experienceScore = 1.0;\n  else if (strategy.experience_level === 'mid' && candidateExp >= 2 && candidateExp < 5) experienceScore = 1.0;\n  else if (strategy.experience_level === 'junior' && candidateExp < 2) experienceScore = 1.0;\n  \n  // Location matching\n  const locationScore = strategy.location_preferences.length === 0 ? 1.0 :\n    strategy.location_preferences.some(loc => \n      candidate.location && candidate.location.toLowerCase().includes(loc.toLowerCase())\n    ) ? 1.0 : 0.3;\n  \n  // Semantic similarity (if available)\n  const semanticScore = candidate.similarity_score || 0.5;\n  \n  // Final weighted score\n  const finalScore = (\n    0.30 * skillScore +\n    0.25 * experienceScore +\n    0.25 * semanticScore +\n    0.20 * locationScore\n  );\n  \n  if (finalScore > 0.3) { // Minimum threshold\n    scoredCandidates.push({\n      candidate_id: candidate.id,\n      name: candidate.name,\n      email: candidate.email,\n      location: candidate.location,\n      skills: candidateSkills,\n      total_years_experience: candidateExp,\n      final_score: finalScore,\n      explanation: {\n        matched_skills: skillMatches,\n        experience_level_match: strategy.experience_level,\n        location_match: locationScore > 0.5,\n        semantic_similarity: semanticScore\n      }\n    });\n  }\n}\n\n// Sort by score and take top 5\nconst topCandidates = scoredCandidates\n  .sort((a, b) => b.final_score - a.final_score)\n  .slice(0, 5);\n\nreturn {\n  json: {\n    goal_id: goal.id,\n    candidates_found: candidates.length,\n    top_candidates: topCandidates,\n    ranking_timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "rank-candidates",
+      "name": "Rank Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate personalized outreach messages\nconst rankingResult = $input.first().json;\nconst goal = $('Analyze Requirements').first().json;\nconst outreachMessages = [];\n\nfor (const candidate of rankingResult.top_candidates) {\n  const matchedSkills = candidate.explanation.matched_skills || [];\n  const skillText = matchedSkills.length > 0 ? \n    matchedSkills.slice(0, 3).join(', ') : 'your technical skills';\n  \n  const message = `Hi ${candidate.name},\n\nI hope this message finds you well. I'm reaching out because I believe your expertise in ${skillText} would be a great fit for an exciting opportunity we have.\n\nWe're looking for a ${goal.title} and I was impressed by your background. Based on your experience, I think you'd be an excellent candidate for this role.\n\nWould you be interested in learning more about this opportunity? I'd love to schedule a brief conversation to discuss the details.\n\nBest regards,\nAI Hiring Agent`;\n  \n  outreachMessages.push({\n    candidate_id: candidate.candidate_id,\n    candidate_name: candidate.name,\n    candidate_email: candidate.email,\n    message: message,\n    score: candidate.final_score,\n    status: 'ready_to_send'\n  });\n}\n\nreturn {\n  json: {\n    goal_id: goal.id,\n    outreach_messages: outreachMessages,\n    total_outreach: outreachMessages.length,\n    generated_timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "generate-outreach",
+      "name": "Generate Outreach",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "agent_actions",
+        "columns": "id, goal_id, action_type, status, result, created_at",
+        "values": "=gen_random_uuid(), {{ $json.goal_id }}, 'send_outreach', 'completed', {{ JSON.stringify($json) }}, NOW()",
+        "options": {}
+      },
+      "id": "log-outreach",
+      "name": "Log Outreach",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [2000, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "agent_actions",
+        "columns": "id, goal_id, action_type, status, result, created_at",
+        "values": "=gen_random_uuid(), {{ $('Analyze Requirements').first().json.id }}, 'schedule_follow_up', 'pending', '{\"scheduled_time\": \"{{ new Date(Date.now() + 3*24*60*60*1000).toISOString() }}\", \"action\": \"check_responses_and_follow_up\"}', NOW()",
+        "options": {}
+      },
+      "id": "schedule-followup",
+      "name": "Schedule Follow-up",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [2220, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-credentials",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Goal created and agent is working autonomously\",\n  \"goal_id\": \"{{ $('Analyze Requirements').first().json.id }}\",\n  \"candidates_found\": {{ $json.candidates_found || 0 }},\n  \"outreach_sent\": {{ $json.total_outreach || 0 }},\n  \"follow_up_scheduled\": true,\n  \"agent_actions\": [\n    \"analyzed_requirements\",\n    \"searched_candidates\",\n    \"ranked_candidates\",\n    \"generated_outreach\",\n    \"scheduled_followup\"\n  ]\n}"
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2440, 300]
+    }
+  ],
+  "connections": {
+    "Create Goal Webhook": {
+      "main": [
+        [
+          {
+            "node": "Save Goal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Goal": {
+      "main": [
+        [
+          {
+            "node": "Analyze Requirements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Requirements": {
+      "main": [
+        [
+          {
+            "node": "Find Matching JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Matching JD": {
+      "main": [
+        [
+          {
+            "node": "Check JD Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check JD Found": {
+      "main": [
+        [
+          {
+            "node": "Search Candidates (JD)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Candidates (Keywords)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Candidates (JD)": {
+      "main": [
+        [
+          {
+            "node": "Rank Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Candidates (Keywords)": {
+      "main": [
+        [
+          {
+            "node": "Rank Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank Candidates": {
+      "main": [
+        [
+          {
+            "node": "Generate Outreach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Outreach": {
+      "main": [
+        [
+          {
+            "node": "Log Outreach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Outreach": {
+      "main": [
+        [
+          {
+            "node": "Schedule Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "ai-agent",
+      "name": "AI Agent"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
