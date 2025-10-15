@@ -2,16 +2,6 @@
 
 A complete AI-powered hiring automation system built with **n8n workflows** for visual, drag-and-drop automation.
 
-## 🎯 **Why n8n?**
-
-**n8n** provides a visual, no-code approach to building complex automation workflows. This implementation offers:
-
-- **Visual Workflows**: See the entire process flow with drag-and-drop nodes
-- **No-Code Automation**: Build complex logic without programming
-- **Extensive Integrations**: Connect to 200+ services out of the box
-- **Self-Hosted**: Complete control over your data and processes
-- **Scalable**: Handle enterprise-level automation requirements
-
 ## 🚀 **Quick Start**
 
 ### Prerequisites
