@@ -68,7 +68,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Ensure binary is under 'file' key for multipart upload.\\nconst item = $input.first();\\nif (item.binary) {\\n  if (item.binary.file) {\\n    // already correct\\n  } else if (item.binary.data) {\\n    item.binary.file = item.binary.data;\\n    delete item.binary.data;\\n  }\\n}\\nreturn item;"
+        "jsCode": "// Ensure binary is under 'file' key for multipart upload.\\nconst item = $input.first();\\nif (item.binary) {\\n  if (item.binary.file) {\\n    // already correct\\n  } else if (item.binary.data) {\\n    item.binary.file = item.binary.data;\\n    delete item.binary.data;\\n  }\\n}\\nreturn [item];"
       },
       "id": "prepare-binary",
       "name": "Prepare Binary",
