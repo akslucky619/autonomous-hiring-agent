@@ -48,10 +48,19 @@
       "parameters": {
         "url": "http://text-extract:8001/extract",
         "method": "POST",
-        "sendBinaryData": true,
-        "binaryPropertyName": "file",
+        "sendBody": true,
+        "specifyBody": "form-data",
+        "formDataParametersUi": {
+          "parameter": [
+            {
+              "name": "file",
+              "value": "",
+              "type": "file",
+              "inputDataFieldName": "file"
+            }
+          ]
+        },
         "options": {
-          "bodyContentType": "multipart-form-data",
           "response": {
             "response": {
               "fullResponse": false,
