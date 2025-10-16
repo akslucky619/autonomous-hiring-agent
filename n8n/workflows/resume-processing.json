@@ -26,7 +26,7 @@
           "conditions": [
             {
               "id": "condition-1",
-              "leftValue": "={{ $json.body.filename }}",
+              "leftValue": "={{ $binary.file?.fileName || $binary.data?.fileName || '' }}",
               "rightValue": ".pdf",
               "operator": {
                 "type": "string",
@@ -51,6 +51,7 @@
         "sendBinaryData": true,
         "binaryPropertyName": "file",
         "options": {
+          "bodyContentType": "multipart-form-data",
           "response": {
             "response": {
               "fullResponse": false,
@@ -64,6 +65,16 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ensure binary is under 'file' key for multipart upload.\\nconst item = $input.first();\\nif (item.binary) {\\n  if (item.binary.file) {\\n    // already correct\\n  } else if (item.binary.data) {\\n    item.binary.file = item.binary.data;\\n    delete item.binary.data;\\n  }\\n}\\nreturn item;"
+      },
+      "id": "prepare-binary",
+      "name": "Prepare Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [580, 300]
     },
     {
       "parameters": {
@@ -157,7 +168,7 @@
       "main": [
         [
           {
-            "node": "Extract Text",
+            "node": "Prepare Binary",
             "type": "main",
             "index": 0
           }
@@ -165,6 +176,17 @@
         [
           {
             "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Binary": {
+      "main": [
+        [
+          {
+            "node": "Extract Text",
             "type": "main",
             "index": 0
           }
