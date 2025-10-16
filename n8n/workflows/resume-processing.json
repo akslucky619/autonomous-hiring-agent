@@ -68,12 +68,17 @@
     },
     {
       "parameters": {
-        "jsCode": "// Ensure binary is under 'file' key for multipart upload for ALL items.\\nconst items = $input.all();\\nfor (const item of items) {\\n  if (item.binary) {\\n    if (item.binary.file) {\\n      // already correct\\n    } else if (item.binary.data) {\\n      item.binary.file = item.binary.data;\\n      delete item.binary.data;\\n    }\\n  }\\n}\\nreturn items;"
+        "action": "move",
+        "sourceKey": "data",
+        "destinationKey": "file",
+        "options": {
+          "keepSource": false
+        }
       },
       "id": "prepare-binary",
       "name": "Prepare Binary",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
       "position": [580, 300]
     },
     {
