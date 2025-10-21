@@ -314,7 +314,7 @@ function ResumeUpload() {
       console.log('Text extraction result:', extractResponse.data)
 
       // Step 2: Send extracted data to n8n for further processing
-      const n8nResponse = await axios.post(`${N8N_URL}/webhook/process-resume`, {
+      const n8nResponse = await axios.post(`${N8N_URL}/webhook/resume-upload-webhook`, {
         extracted_data: extractResponse.data,
         original_filename: selectedFile.name,
         file_size: selectedFile.size,
