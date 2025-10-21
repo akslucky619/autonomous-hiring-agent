@@ -37,12 +37,24 @@
     },
     {
       "parameters": {
-        "jsCode": "// Generate embedding using proper JSON formatting\nconst item = $input.first();\nconst text = item.json.text || '';\n\n// Make the HTTP request with properly formatted JSON\nconst response = await $http.request({\n  method: 'POST',\n  url: 'http://embeddings:8002/embed',\n  headers: {\n    'Content-Type': 'application/json'\n  },\n  body: {\n    text: text\n  }\n});\n\nif (!response.embedding) {\n  throw new Error('Failed to generate embedding');\n}\n\nreturn {\n  json: {\n    ...item.json,\n    embedding: response.embedding,\n    embedding_generated: true\n  }\n};"
+        "url": "http://embeddings:8002/embed",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": {{ JSON.stringify($json.text) }}\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          }
+        }
       },
       "id": "generate-embedding",
       "name": "Generate Embedding",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
       "position": [1120, 300]
     },
     {
