@@ -54,7 +54,7 @@
           "parameter": [
             {
               "name": "file",
-              "value": "",
+              "value": "={{ $binary.file }}",
               "type": "file",
               "inputDataFieldName": "file"
             }
@@ -77,17 +77,12 @@
     },
     {
       "parameters": {
-        "action": "move",
-        "sourceKey": "data",
-        "destinationKey": "file",
-        "options": {
-          "keepSource": false
-        }
+        "jsCode": "// Prepare binary data for text extraction\nconst item = $input.first();\n\n// Debug: log the structure\nconsole.log('Item structure:', JSON.stringify(item, null, 2));\n\n// Check if binary data exists in different possible locations\nlet binaryData = null;\nif (item.binary && item.binary.data) {\n  binaryData = item.binary.data;\n} else if (item.binary && item.binary.file) {\n  binaryData = item.binary.file;\n} else if (item.binary) {\n  // Get the first binary property\n  const binaryKeys = Object.keys(item.binary);\n  if (binaryKeys.length > 0) {\n    binaryData = item.binary[binaryKeys[0]];\n  }\n}\n\nif (binaryData) {\n  return [{\n    json: item.json || {},\n    binary: {\n      file: binaryData\n    }\n  }];\n} else {\n  throw new Error('No binary data found. Available keys: ' + Object.keys(item));\n}"
       },
       "id": "prepare-binary",
       "name": "Prepare Binary",
-      "type": "n8n-nodes-base.moveBinaryData",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [580, 300]
     },
     {
