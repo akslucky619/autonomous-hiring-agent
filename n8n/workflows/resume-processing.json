@@ -46,33 +46,12 @@
     },
     {
       "parameters": {
-        "url": "http://text-extract:8001/extract",
-        "method": "POST",
-        "sendBody": true,
-        "specifyBody": "form-data",
-        "formDataParametersUi": {
-          "parameter": [
-            {
-              "name": "file",
-              "value": "",
-              "type": "file",
-              "inputDataFieldName": "file"
-            }
-          ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "fullResponse": false,
-              "neverError": false
-            }
-          }
-        }
+        "jsCode": "// Extract text using Node.js built-in modules only\nconst item = $input.first();\nconst https = require('https');\nconst fs = require('fs');\nconst path = require('path');\n\n// Get the binary data\nconst binaryData = item.binary.file;\nif (!binaryData) {\n  throw new Error('No binary data found');\n}\n\n// Create a temporary file\nconst tempFilePath = path.join('/tmp', `resume_${Date.now()}.pdf`);\nfs.writeFileSync(tempFilePath, binaryData.data);\n\n// Create multipart form data manually\nconst boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2);\nconst formData = [];\nformData.push(`--${boundary}`);\nformData.push(`Content-Disposition: form-data; name=\"file\"; filename=\"${binaryData.fileName || 'resume.pdf'}\"`);\nformData.push(`Content-Type: ${binaryData.mimeType || 'application/pdf'}`);\nformData.push('');\nformData.push(binaryData.data.toString('binary'));\nformData.push(`--${boundary}--`);\n\nconst postData = Buffer.from(formData.join('\\r\\n'), 'utf8');\n\n// Make the request using Node.js built-in https\nconst options = {\n  hostname: 'text-extract',\n  port: 8001,\n  path: '/extract',\n  method: 'POST',\n  headers: {\n    'Content-Type': `multipart/form-data; boundary=${boundary}`,\n    'Content-Length': postData.length\n  }\n};\n\nconst response = await new Promise((resolve, reject) => {\n  const req = https.request(options, (res) => {\n    let data = '';\n    res.on('data', (chunk) => data += chunk);\n    res.on('end', () => {\n      try {\n        resolve(JSON.parse(data));\n      } catch (e) {\n        reject(new Error('Invalid JSON response: ' + data));\n      }\n    });\n  });\n  \n  req.on('error', reject);\n  req.write(postData);\n  req.end();\n});\n\n// Clean up temp file\ntry {\n  fs.unlinkSync(tempFilePath);\n} catch (e) {\n  // Ignore cleanup errors\n}\n\nreturn [{\n  json: response,\n  binary: item.binary\n}];"
       },
       "id": "extract-text",
       "name": "Extract Text",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [680, 300]
     },
     {
