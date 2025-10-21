@@ -26,11 +26,11 @@
           "conditions": [
             {
               "id": "condition-1",
-              "leftValue": "={{ $binary.file?.fileName || $binary.data?.fileName || '' }}",
-              "rightValue": ".pdf",
+              "leftValue": "={{ $json.extracted_data }}",
+              "rightValue": "",
               "operator": {
-                "type": "string",
-                "operation": "endsWith"
+                "type": "object",
+                "operation": "exists"
               }
             }
           ],
@@ -39,7 +39,7 @@
         "options": {}
       },
       "id": "check-file-type",
-      "name": "Check File Type",
+      "name": "Check Extracted Data",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [460, 300]

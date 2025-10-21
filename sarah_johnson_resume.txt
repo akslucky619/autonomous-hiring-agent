@@ -1,0 +1,57 @@
+Sarah Johnson
+Senior Full Stack Developer
+sarah.johnson@techcorp.com
+Seattle, WA
+
+PROFESSIONAL SUMMARY
+Experienced full-stack developer with 8+ years of expertise in building scalable web applications. 
+Specialized in React, Node.js, and cloud technologies. Passionate about clean code and agile methodologies.
+
+TECHNICAL SKILLS
+• Frontend: React, Vue.js, TypeScript, HTML5, CSS3, SASS
+• Backend: Node.js, Express, Python, Django, FastAPI
+• Databases: MongoDB, PostgreSQL, Redis
+• Cloud: AWS, Azure, Docker, Kubernetes
+• Tools: Git, Jenkins, Jira, Figma
+• Languages: JavaScript, Python, Java, Go
+
+EXPERIENCE
+
+Senior Full Stack Developer | TechCorp Inc. | 2020 - Present
+• Led development of microservices architecture serving 1M+ users
+• Implemented CI/CD pipelines reducing deployment time by 60%
+• Mentored 5 junior developers and conducted code reviews
+• Built real-time chat application using WebSockets and Redis
+• Optimized database queries improving response time by 40%
+
+Full Stack Developer | StartupXYZ | 2018 - 2020
+• Developed RESTful APIs using Node.js and Express
+• Created responsive React applications with Redux state management
+• Integrated third-party services (Stripe, SendGrid, Twilio)
+• Implemented automated testing with Jest and Cypress
+
+Frontend Developer | WebSolutions | 2016 - 2018
+• Built responsive web applications using React and Vue.js
+• Collaborated with UX/UI designers to implement pixel-perfect designs
+• Optimized application performance reducing load time by 50%
+• Worked with cross-functional teams in agile environment
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of Washington, Seattle, WA
+Graduated: 2016
+
+CERTIFICATIONS
+• AWS Certified Solutions Architect
+• Google Cloud Professional Developer
+• Certified Scrum Master (CSM)
+
+PROJECTS
+• E-commerce Platform: Built scalable online marketplace with React, Node.js, and MongoDB
+• Real-time Analytics Dashboard: Created data visualization tool using D3.js and WebSockets
+• Mobile App Backend: Developed REST API for mobile application serving 100K+ users
+
+LANGUAGES
+• English (Native)
+• Spanish (Conversational)
+• French (Basic)
