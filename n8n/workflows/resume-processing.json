@@ -17,35 +17,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "condition-1",
-              "leftValue": "={{ $json.extracted_data }}",
-              "rightValue": "",
-              "operator": {
-                "type": "object",
-                "operation": "exists"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "check-file-type",
-      "name": "Check Extracted Data",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [460, 300]
-    },
-    {
-      "parameters": {
         "jsCode": "// Process extracted resume data\nconst item = $input.first();\nconst extractedData = item.json.extracted_data;\n\nif (!extractedData) {\n  throw new Error('No extracted data found');\n}\n\n// Return the extracted data for further processing\nreturn [{\n  json: {\n    ...extractedData,\n    original_filename: item.json.original_filename,\n    file_size: item.json.file_size,\n    upload_timestamp: item.json.upload_timestamp,\n    processing_timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "extract-text",
@@ -135,25 +106,7 @@
       "main": [
         [
           {
-            "node": "Check Extracted Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Extracted Data": {
-      "main": [
-        [
-          {
             "node": "Process Extracted Data",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Error Response",
             "type": "main",
             "index": 0
           }
