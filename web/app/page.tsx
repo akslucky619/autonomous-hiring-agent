@@ -298,12 +298,14 @@ function ResumeUpload() {
     setError(null)
     setUploadResult(null)
 
+    let extractResponse: any = null
+
     try {
       // Step 1: Send file directly to text-extract service
       const formData = new FormData()
       formData.append('file', selectedFile)
 
-      const extractResponse = await axios.post('http://localhost:8001/extract', formData, {
+      extractResponse = await axios.post('http://localhost:8001/extract', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -332,7 +334,18 @@ function ResumeUpload() {
 
     } catch (err: any) {
       console.error('Upload error:', err)
-      setError(err.response?.data?.detail || err.message || 'Upload failed')
+      
+      // If we have extraction data but n8n failed, show partial success
+      if (extractResponse && extractResponse.data) {
+        setUploadResult({
+          extraction: extractResponse.data,
+          n8n_processing: null,
+          status: 'partial'
+        })
+        setError('Text extracted successfully, but workflow processing failed. Check n8n logs.')
+      } else {
+        setError(err.response?.data?.detail || err.message || 'Upload failed')
+      }
     } finally {
       setUploading(false)
     }
@@ -400,9 +413,15 @@ function ResumeUpload() {
 
             {uploadResult && (
               <div className="space-y-4">
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-600 font-medium">Upload successful!</p>
-                </div>
+                {uploadResult.status === 'success' ? (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-600 font-medium">Upload successful!</p>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-600 font-medium">Text extracted, but workflow processing failed</p>
+                  </div>
+                )}
                 
                 <div className="space-y-3">
                   <div>
@@ -418,9 +437,15 @@ function ResumeUpload() {
                   
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Processing Status:</h4>
-                    <div className="p-3 bg-blue-50 rounded-lg text-sm">
-                      <p className="text-blue-600">Resume processed and stored in database</p>
-                    </div>
+                    {uploadResult.status === 'success' ? (
+                      <div className="p-3 bg-green-50 rounded-lg text-sm">
+                        <p className="text-green-600">✅ Resume processed and stored in database</p>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-red-50 rounded-lg text-sm">
+                        <p className="text-red-600">❌ Workflow processing failed - check n8n logs</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
