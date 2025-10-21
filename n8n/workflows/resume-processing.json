@@ -54,7 +54,7 @@
           "parameter": [
             {
               "name": "file",
-              "value": "={{ $binary.file.data }}",
+              "value": "",
               "type": "file",
               "inputDataFieldName": "file"
             }
