@@ -106,7 +106,7 @@
       "main": [
         [
           {
-            "node": "Process Extracted Data",
+            "node": "Try-Catch Wrapper",
             "type": "main",
             "index": 0
           }

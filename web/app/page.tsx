@@ -328,6 +328,12 @@ function ResumeUpload() {
 
       // Check if n8n workflow actually succeeded by looking at response
       const n8nData = n8nResponse.data
+      
+      // If response is empty or has error status, consider it a failure
+      if (!n8nData || Object.keys(n8nData).length === 0) {
+        throw new Error('n8n workflow failed: No response received from workflow')
+      }
+      
       if (n8nData && n8nData.status === 'error') {
         throw new Error(`n8n workflow failed: ${n8nData.message || 'Unknown error'}`)
       }
