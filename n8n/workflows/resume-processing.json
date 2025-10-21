@@ -46,7 +46,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract text using direct HTTP request\nconst item = $input.first();\n\n// Get the binary data\nconst binaryData = item.binary.file;\nif (!binaryData) {\n  throw new Error('No binary data found');\n}\n\n// Create FormData manually\nconst FormData = require('form-data');\nconst form = new FormData();\nform.append('file', binaryData.data, {\n  filename: binaryData.fileName || 'resume.pdf',\n  contentType: binaryData.mimeType || 'application/pdf'\n});\n\n// Make the request\nconst axios = require('axios');\nconst response = await axios.post('http://text-extract:8001/extract', form, {\n  headers: {\n    ...form.getHeaders()\n  },\n  timeout: 30000\n});\n\nreturn [{\n  json: response.data,\n  binary: item.binary\n}];"
+        "jsCode": "// Extract text using n8n's built-in HTTP request\nconst item = $input.first();\n\n// Get the binary data\nconst binaryData = item.binary.file;\nif (!binaryData) {\n  throw new Error('No binary data found');\n}\n\n// Use n8n's built-in HTTP request\nconst response = await $http.request({\n  method: 'POST',\n  url: 'http://text-extract:8001/extract',\n  headers: {\n    'Content-Type': 'multipart/form-data'\n  },\n  formData: {\n    file: {\n      value: binaryData.data,\n      options: {\n        filename: binaryData.fileName || 'resume.pdf',\n        contentType: binaryData.mimeType || 'application/pdf'\n      }\n    }\n  },\n  timeout: 30000\n});\n\nreturn [{\n  json: response.data,\n  binary: item.binary\n}];"
       },
       "id": "extract-text",
       "name": "Extract Text",
