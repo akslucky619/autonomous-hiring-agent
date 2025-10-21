@@ -274,39 +274,160 @@ function AgentDashboard() {
 
 // Resume Upload Component
 function ResumeUpload() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadResult, setUploadResult] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      setError(null)
+      setUploadResult(null)
+    }
+  }
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setError('Please select a file')
+      return
+    }
+
+    setUploading(true)
+    setError(null)
+    setUploadResult(null)
+
+    try {
+      // Step 1: Send file directly to text-extract service
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+
+      const extractResponse = await axios.post('http://localhost:8001/extract', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      console.log('Text extraction result:', extractResponse.data)
+
+      // Step 2: Send extracted data to n8n for further processing
+      const n8nResponse = await axios.post(`${N8N_URL}/webhook/process-resume`, {
+        extracted_data: extractResponse.data,
+        original_filename: selectedFile.name,
+        file_size: selectedFile.size,
+        upload_timestamp: new Date().toISOString()
+      })
+
+      setUploadResult({
+        extraction: extractResponse.data,
+        n8n_processing: n8nResponse.data
+      })
+
+    } catch (err: any) {
+      console.error('Upload error:', err)
+      setError(err.response?.data?.detail || err.message || 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Resume Upload</h2>
         <p className="text-gray-600 mb-4">
-          Upload resumes to be processed by the n8n workflow. The system will:
+          Upload resumes to be processed by the system. The new flow:
         </p>
         
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm">1</div>
-            <span className="text-gray-700">Extract text from PDF files</span>
+            <span className="text-gray-700">Upload file directly to text-extract service</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm">2</div>
-            <span className="text-gray-700">Normalize skills and extract structured data</span>
+            <span className="text-gray-700">Send extracted text to n8n for processing</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm">3</div>
-            <span className="text-gray-700">Generate AI embeddings for semantic search</span>
+            <span className="text-gray-700">Generate embeddings and store in database</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm">4</div>
-            <span className="text-gray-700">Store candidate data in database</span>
+        </div>
+
+        {/* File Upload Section */}
+        <div className="mt-6 border border-gray-200 rounded-lg p-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Resume File
+              </label>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleFileSelect}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-n8n-50 file:text-n8n-700 hover:file:bg-n8n-100"
+              />
+            </div>
+
+            {selectedFile && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <strong>Selected:</strong> {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={handleUpload}
+              disabled={!selectedFile || uploading}
+              className="btn-n8n disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {uploading ? 'Processing...' : 'Upload & Process'}
+            </button>
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
+            {uploadResult && (
+              <div className="space-y-4">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-600 font-medium">Upload successful!</p>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Extracted Data:</h4>
+                    <div className="p-3 bg-gray-50 rounded-lg text-sm">
+                      <p><strong>Name:</strong> {uploadResult.extraction.name}</p>
+                      <p><strong>Email:</strong> {uploadResult.extraction.email}</p>
+                      <p><strong>Location:</strong> {uploadResult.extraction.location}</p>
+                      <p><strong>Experience:</strong> {uploadResult.extraction.experience_years} years</p>
+                      <p><strong>Skills:</strong> {uploadResult.extraction.skills?.join(', ')}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Processing Status:</h4>
+                    <div className="p-3 bg-blue-50 rounded-lg text-sm">
+                      <p className="text-blue-600">Resume processed and stored in database</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600">
-            <strong>Webhook URL:</strong> <code>{N8N_URL}/webhook/upload-resume</code>
+            <strong>New Flow:</strong> File → Text-Extract Service → n8n Processing → Database
           </p>
           <p className="text-sm text-gray-600 mt-1">
-            Use this endpoint to upload resumes programmatically or integrate with other systems.
+            This approach avoids binary data handling issues in n8n workflows.
           </p>
         </div>
       </div>

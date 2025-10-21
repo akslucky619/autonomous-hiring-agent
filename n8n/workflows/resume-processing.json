@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "upload-resume",
+        "path": "process-resume",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -46,23 +46,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract text using Node.js built-in modules only\nconst item = $input.first();\nconst https = require('https');\nconst fs = require('fs');\nconst path = require('path');\n\n// Get the binary data\nconst binaryData = item.binary.file;\nif (!binaryData) {\n  throw new Error('No binary data found');\n}\n\n// Create a temporary file\nconst tempFilePath = path.join('/tmp', `resume_${Date.now()}.pdf`);\nfs.writeFileSync(tempFilePath, binaryData.data);\n\n// Create multipart form data manually\nconst boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2);\nconst formData = [];\nformData.push(`--${boundary}`);\nformData.push(`Content-Disposition: form-data; name=\"file\"; filename=\"${binaryData.fileName || 'resume.pdf'}\"`);\nformData.push(`Content-Type: ${binaryData.mimeType || 'application/pdf'}`);\nformData.push('');\nformData.push(binaryData.data.toString('binary'));\nformData.push(`--${boundary}--`);\n\nconst postData = Buffer.from(formData.join('\\r\\n'), 'utf8');\n\n// Make the request using Node.js built-in https\nconst options = {\n  hostname: 'text-extract',\n  port: 8001,\n  path: '/extract',\n  method: 'POST',\n  headers: {\n    'Content-Type': `multipart/form-data; boundary=${boundary}`,\n    'Content-Length': postData.length\n  }\n};\n\nconst response = await new Promise((resolve, reject) => {\n  const req = https.request(options, (res) => {\n    let data = '';\n    res.on('data', (chunk) => data += chunk);\n    res.on('end', () => {\n      try {\n        resolve(JSON.parse(data));\n      } catch (e) {\n        reject(new Error('Invalid JSON response: ' + data));\n      }\n    });\n  });\n  \n  req.on('error', reject);\n  req.write(postData);\n  req.end();\n});\n\n// Clean up temp file\ntry {\n  fs.unlinkSync(tempFilePath);\n} catch (e) {\n  // Ignore cleanup errors\n}\n\nreturn [{\n  json: response,\n  binary: item.binary\n}];"
+        "jsCode": "// Process extracted resume data\nconst item = $input.first();\nconst extractedData = item.json.extracted_data;\n\nif (!extractedData) {\n  throw new Error('No extracted data found');\n}\n\n// Return the extracted data for further processing\nreturn [{\n  json: {\n    ...extractedData,\n    original_filename: item.json.original_filename,\n    file_size: item.json.file_size,\n    upload_timestamp: item.json.upload_timestamp,\n    processing_timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "extract-text",
-      "name": "Extract Text",
+      "name": "Process Extracted Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [680, 300]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Prepare binary data for text extraction\nconst item = $input.first();\n\n// Debug: log the structure\nconsole.log('=== DEBUG: Item structure ===');\nconsole.log('Item keys:', Object.keys(item));\nconsole.log('Item.binary keys:', item.binary ? Object.keys(item.binary) : 'No binary');\nif (item.binary && item.binary.data) {\n  console.log('Binary.data type:', typeof item.binary.data);\n  console.log('Binary.data keys:', Object.keys(item.binary.data));\n}\nif (item.binary && item.binary.file) {\n  console.log('Binary.file type:', typeof item.binary.file);\n  console.log('Binary.file keys:', Object.keys(item.binary.file));\n}\nconsole.log('=== END DEBUG ===');\n\n// Check if binary data exists in different possible locations\nlet binaryData = null;\nif (item.binary && item.binary.data) {\n  binaryData = item.binary.data;\n} else if (item.binary && item.binary.file) {\n  binaryData = item.binary.file;\n} else if (item.binary) {\n  // Get the first binary property\n  const binaryKeys = Object.keys(item.binary);\n  if (binaryKeys.length > 0) {\n    binaryData = item.binary[binaryKeys[0]];\n  }\n}\n\nif (binaryData) {\n  return [{\n    json: item.json || {},\n    binary: {\n      file: binaryData\n    }\n  }];\n} else {\n  throw new Error('No binary data found. Available keys: ' + Object.keys(item));\n}"
-      },
-      "id": "prepare-binary",
-      "name": "Prepare Binary",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [580, 300]
     },
     {
       "parameters": {
@@ -156,7 +146,7 @@
       "main": [
         [
           {
-            "node": "Prepare Binary",
+            "node": "Process Extracted Data",
             "type": "main",
             "index": 0
           }
@@ -170,18 +160,7 @@
         ]
       ]
     },
-    "Prepare Binary": {
-      "main": [
-        [
-          {
-            "node": "Extract Text",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Text": {
+    "Process Extracted Data": {
       "main": [
         [
           {
