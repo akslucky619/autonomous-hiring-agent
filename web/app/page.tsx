@@ -326,6 +326,12 @@ function ResumeUpload() {
         throw new Error(`n8n processing failed: ${n8nResponse.statusText}`)
       }
 
+      // Check if n8n workflow actually succeeded by looking at response
+      const n8nData = n8nResponse.data
+      if (n8nData && n8nData.status === 'error') {
+        throw new Error(`n8n workflow failed: ${n8nData.message || 'Unknown error'}`)
+      }
+
       setUploadResult({
         extraction: extractResponse.data,
         n8n_processing: n8nResponse.data,
