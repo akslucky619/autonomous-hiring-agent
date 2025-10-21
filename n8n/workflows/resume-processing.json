@@ -46,12 +46,33 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract text using n8n's built-in HTTP request\nconst item = $input.first();\n\n// Get the binary data\nconst binaryData = item.binary.file;\nif (!binaryData) {\n  throw new Error('No binary data found');\n}\n\n// Use n8n's built-in HTTP request\nconst response = await $http.request({\n  method: 'POST',\n  url: 'http://text-extract:8001/extract',\n  headers: {\n    'Content-Type': 'multipart/form-data'\n  },\n  formData: {\n    file: {\n      value: binaryData.data,\n      options: {\n        filename: binaryData.fileName || 'resume.pdf',\n        contentType: binaryData.mimeType || 'application/pdf'\n      }\n    }\n  },\n  timeout: 30000\n});\n\nreturn [{\n  json: response.data,\n  binary: item.binary\n}];"
+        "url": "http://text-extract:8001/extract",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "form-data",
+        "formDataParametersUi": {
+          "parameter": [
+            {
+              "name": "file",
+              "value": "",
+              "type": "file",
+              "inputDataFieldName": "file"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": false
+            }
+          }
+        }
       },
       "id": "extract-text",
       "name": "Extract Text",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
       "position": [680, 300]
     },
     {
