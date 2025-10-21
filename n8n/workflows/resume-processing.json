@@ -41,7 +41,7 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"text\": {{ $json.text }}\n}",
+        "jsonBody": "={\n  \"text\": \"{{ $json.text }}\"\n}",
         "options": {
           "response": {
             "response": {
