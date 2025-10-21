@@ -80,7 +80,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Resume processed successfully\",\n  \"candidate_id\": \"{{ $json.id }}\",\n  \"extracted_data\": {\n    \"name\": \"{{ $json.name }}\",\n    \"email\": \"{{ $json.email }}\",\n    \"location\": \"{{ $json.location }}\",\n    \"skills\": {{ JSON.stringify($json.skills) }},\n    \"experience_years\": {{ $json.total_years_experience }}\n  }\n}"
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Resume processed successfully\",\n  \"candidate_id\": \"{{ $json.id || 'unknown' }}\",\n  \"extracted_data\": {\n    \"name\": \"{{ $json.name || 'Unknown' }}\",\n    \"email\": \"{{ $json.email || 'unknown@example.com' }}\",\n    \"location\": \"{{ $json.location || 'Unknown' }}\",\n    \"skills\": {{ JSON.stringify($json.skills || []) }},\n    \"experience_years\": {{ $json.total_years_experience || 0 }}\n  }\n}"
       },
       "id": "success-response",
       "name": "Success Response",
