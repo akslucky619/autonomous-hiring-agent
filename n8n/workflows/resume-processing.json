@@ -29,8 +29,8 @@
               "leftValue": "={{ $json.extracted_data }}",
               "rightValue": "",
               "operator": {
-                "type": "object",
-                "operation": "exists"
+                "type": "string",
+                "operation": "notEmpty"
               }
             }
           ],
