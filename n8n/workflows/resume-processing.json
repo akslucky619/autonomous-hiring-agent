@@ -26,7 +26,7 @@
           "conditions": [
             {
               "id": "condition-1",
-              "leftValue": "={{ $json.body.extracted_data }}",
+              "leftValue": "={{ $json.extracted_data }}",
               "rightValue": "",
               "operator": {
                 "type": "object",

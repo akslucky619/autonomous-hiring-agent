@@ -319,9 +319,15 @@ function ResumeUpload() {
         upload_timestamp: new Date().toISOString()
       })
 
+      // Check if n8n processing was successful
+      if (n8nResponse.status !== 200) {
+        throw new Error(`n8n processing failed: ${n8nResponse.statusText}`)
+      }
+
       setUploadResult({
         extraction: extractResponse.data,
-        n8n_processing: n8nResponse.data
+        n8n_processing: n8nResponse.data,
+        status: 'success'
       })
 
     } catch (err: any) {
