@@ -46,33 +46,12 @@
     },
     {
       "parameters": {
-        "url": "http://text-extract:8001/extract",
-        "method": "POST",
-        "sendBody": true,
-        "specifyBody": "form-data",
-        "formDataParametersUi": {
-          "parameter": [
-            {
-              "name": "file",
-              "value": "",
-              "type": "file",
-              "inputDataFieldName": "file"
-            }
-          ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "fullResponse": false,
-              "neverError": false
-            }
-          }
-        }
+        "jsCode": "// Extract text using direct HTTP request\nconst item = $input.first();\n\n// Get the binary data\nconst binaryData = item.binary.file;\nif (!binaryData) {\n  throw new Error('No binary data found');\n}\n\n// Create FormData manually\nconst FormData = require('form-data');\nconst form = new FormData();\nform.append('file', binaryData.data, {\n  filename: binaryData.fileName || 'resume.pdf',\n  contentType: binaryData.mimeType || 'application/pdf'\n});\n\n// Make the request\nconst axios = require('axios');\nconst response = await axios.post('http://text-extract:8001/extract', form, {\n  headers: {\n    ...form.getHeaders()\n  },\n  timeout: 30000\n});\n\nreturn [{\n  json: response.data,\n  binary: item.binary\n}];"
       },
       "id": "extract-text",
       "name": "Extract Text",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [680, 300]
     },
     {
