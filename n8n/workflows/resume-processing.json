@@ -135,14 +135,14 @@
       "main": [
         [
           {
-            "node": "Check File Type",
+            "node": "Check Extracted Data",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check File Type": {
+    "Check Extracted Data": {
       "main": [
         [
           {
