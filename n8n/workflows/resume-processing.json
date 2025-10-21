@@ -62,7 +62,19 @@
         "operation": "insert",
         "table": "candidates",
         "columns": "id, name, email, location, work_authorization, total_years_experience, skills, raw_text, embedding, structured_data, created_at",
-        "values": "={{ $json.extracted_name || $json.name || 'Unknown' }}, {{ $json.extracted_email || $json.email || '' }}, {{ $json.extracted_location || $json.location || '' }}, 'Unknown', {{ $json.experience_years || 0 }}, {{ JSON.stringify($json.normalized_skills || []) }}, {{ JSON.stringify($json.text || '') }}, {{ JSON.stringify($json.embedding || []) }}, {{ JSON.stringify($json) }}, NOW()",
+        "values": {
+          "id": "={{ $json.id || $json.candidate_id }}",
+          "name": "={{ $json.name || 'Unknown' }}",
+          "email": "={{ $json.email || '' }}",
+          "location": "={{ $json.location || '' }}",
+          "work_authorization": "Unknown",
+          "total_years_experience": "={{ $json.experience_years || 0 }}",
+          "skills": "={{ JSON.stringify($json.normalized_skills || $json.skills || []) }}",
+          "raw_text": "={{ JSON.stringify($json.text || '') }}",
+          "embedding": "={{ JSON.stringify($json.embedding || []) }}",
+          "structured_data": "={{ JSON.stringify($json) }}",
+          "created_at": "NOW()"
+        },
         "options": {}
       },
       "id": "save-candidate",
